@@ -1,0 +1,27 @@
+seed: 42
+
+run:
+  output_dir: runs
+  run_id: null
+
+data:
+  train_transaction_path: data/train_transaction.csv
+  train_identity_path: data/train_identity.csv
+  target_col: isFraud
+  val_size: 0.2
+  random_state: 42
+  batch_size: 256
+  num_workers: 0
+
+model:
+  hidden_sizes: [256, 128, 64]
+  dropout: 0.2
+  activation: relu
+  batchnorm: true
+
+train:
+  epochs: 5
+  lr: 0.001
+  weight_decay: 0.0
+  early_stopping: false
+  patience: 3
