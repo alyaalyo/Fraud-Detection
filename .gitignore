@@ -3,6 +3,7 @@ runs/
 venv/
 env/
 ENV/
+.venv/
 .vscode/
 .idea/
 __pycache__/

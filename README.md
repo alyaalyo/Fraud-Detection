@@ -89,31 +89,16 @@ Code refactoring, documentation, final PDF submission, presentation rehearsal, a
 - I. Goodfellow, Y. Bengio, and A. Courville, Deep Learning. MIT Press, 2016.
 - A. Petrenko et al., "NIC-project: Evolutionary optimization of neural networks for fraud detection," GitHub repository, 2026. `https://github.com/alyaalyo/NIC-project`
 
-## Week 1 Baseline Pipeline
+## GA Quick Start
 
-### Baseline Pipeline
-We implemented reproducible PyTorch training pipeline for the IEEE-CIS Fraud Detection dataset. It is designed to serve as a baseline and a future GA fitness function.
-
-## Quick Start
-
-1. Place Kaggle files locally (not downloaded by the code):
-   - `data/train_transaction.csv`
-   - `data/train_identity.csv` (optional)
-
-2. Create environment and install dependencies:
+Run a small GA search (checkpoint-friendly settings):
 
 ```bash
-pip install -r requirements.txt
-```
-
-3. Run baseline training:
-
-```bash
-python scripts/train_baseline.py --config configs/baseline_mlp.yaml
+source .venv/bin/activate
+python scripts/run_ga.py --config configs/ga_mlp.yaml
 ```
 
 Artifacts are saved under `runs/<run_id>/`:
-- `config.yaml`
-- `metrics.json`
-- `model.pt` (best by val ROC-AUC)
-- `train.log`
+- `history.json` (per-generation summary)
+- `best.json` (best architecture + metrics)
+- `gen_<n>/ind_<k>/` (per-individual logs, metrics, and `gene.json`)

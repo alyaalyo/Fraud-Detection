@@ -22,10 +22,10 @@ def seed_everything(seed: int) -> None:
     torch.backends.cudnn.benchmark = False
 
 
-def setup_logging(run_dir: str) -> logging.Logger:
+def setup_logging(run_dir: str, name: str = "nic") -> logging.Logger:
     """Configure root logger to log to stdout and a file in run_dir."""
     os.makedirs(run_dir, exist_ok=True)
-    logger = logging.getLogger("nic")
+    logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     logger.handlers.clear()
 
