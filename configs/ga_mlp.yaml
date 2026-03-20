@@ -1,0 +1,38 @@
+seed: 42
+
+run:
+  output_dir: runs
+  run_id: null
+
+data:
+  train_transaction_path: data/train_transaction.csv
+  train_identity_path: data/train_identity.csv
+  target_col: isFraud
+  val_size: 0.2
+  random_state: 42
+  batch_size: 256
+  num_workers: 0
+
+train:
+  epochs: 3
+  lr: 0.001
+  weight_decay: 0.0
+  early_stopping: false
+  patience: 3
+
+ga:
+  population_size: 5
+  generations: 2
+  elitism: 1
+  selection: tournament
+  tournament_size: 3
+  crossover_rate: 0.9
+  mutation_rate: 0.3
+  min_layers: 1
+  max_layers: 4
+  units_choices: [32, 64, 128, 256]
+  activation_choices: [relu, gelu, tanh]
+  dropout_range: [0.0, 0.5]
+  add_layer_prob: 0.2
+  remove_layer_prob: 0.2
+  fitness_metric: val_roc_auc

@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import kaggle
 import os
 import zipfile
 from pathlib import Path
@@ -8,72 +7,86 @@ from pathlib import Path
 
 # directories initialization
 HOME_DIR = Path(__file__).resolve().parent
-DATA_DIR = HOME_DIR / "data"
-IEE_DIR = DATA_DIR / "ieee_fraud_detection"
+PROJECT_ROOT = HOME_DIR.parent
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
+
+
+def _resolve_data_dir(override: Path | None = None) -> Path:
+    if override is not None:
+        return override
+    env_dir = os.environ.get("NIC_DATA_DIR")
+    if env_dir:
+        return Path(env_dir)
+    if DEFAULT_DATA_DIR.exists():
+        return DEFAULT_DATA_DIR
+    # Backward-compatible fallback
+    fallback = HOME_DIR / "data"
+    if fallback.exists():
+        return fallback
+    # Default to project-root data path for clearer error messages
+    return DEFAULT_DATA_DIR
 
 
 # the whole preprocessing pipeline:
-# downloads the dataset from kaggle
 # merges transactions with identities
 # preprocesses it
 # splits based on a time of transaction
 # returns X_train, X_test, y_train, y_test for model training
-def process_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series] | None :
-    if check_download():
-        trans, id = load_data()
-        trans_id_merged = pd.merge(trans, id, on="TransactionID", how="left")
-        df = preprocess(trans_id_merged)
-        data_sorted = df.sort_values('TransactionDT').reset_index(drop=True)
-        # Create time-based split (80-20)
-        split_idx = int(0.8 * len(data_sorted))
-        train, test = split(data_sorted, split_idx)
-        X_train = train.drop("isFraud", axis=1)
-        y_train = train["isFraud"]
-        X_test = test.drop("isFraud", axis=1)
-        y_test = test["isFraud"]
-        return X_train, X_test, y_train, y_test
-
-
-# doqnloads the dataset from kaggle into a folder
-# Fraud-Detection/preprocessing/data/ieee_fraud_detection
-def download_dataset() -> bool:
-    try:
-        print("downloading the dataset")
-        competition = "ieee-fraud-detection"
-        kaggle.api.competition_download_files(competition, path=str(IEE_DIR))
-        zip_file = os.path.join(str(IEE_DIR), f"{competition}.zip")
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            zip_ref.extractall(str(IEE_DIR))
-
-        os.remove(zip_file)
-        competition_specific = os.path.join(str(IEE_DIR), "sample_submission.csv")
-        os.remove(competition_specific)
-        return True
-    except Exception as e:
-        print(f"An error downloading the dataset: {e}")
-    return False
-
-
-# checks if dataset was already downloaded
-def check_download() -> bool:
-    DATA_DIR.mkdir(exist_ok=True)
-    files_required = [
-        str(IEE_DIR)  + "/train_identity.csv",
-        str(IEE_DIR)  + "/train_transaction.csv"
-    ]
-    if all(os.path.exists(p) for p in files_required):
-        print("The dataset is already downloaded")
-        return True
-    return download_dataset()
+def process_data(
+    data_dir: Path | None = None,
+    train_transaction_path: str | None = None,
+    train_identity_path: str | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series] | None:
+    trans, id = load_data(
+        data_dir=data_dir,
+        train_transaction_path=train_transaction_path,
+        train_identity_path=train_identity_path,
+    )
+    trans_id_merged = pd.merge(trans, id, on="TransactionID", how="left")
+    df = preprocess(trans_id_merged)
+    data_sorted = df.sort_values('TransactionDT').reset_index(drop=True)
+    # Create time-based split (80-20)
+    split_idx = int(0.8 * len(data_sorted))
+    train, test = split(data_sorted, split_idx)
+    X_train = train.drop("isFraud", axis=1)
+    y_train = train["isFraud"]
+    X_test = test.drop("isFraud", axis=1)
+    y_test = test["isFraud"]
+    return X_train, X_test, y_train, y_test
 
 
 # reads transation and identitu csv files from the dataset
 # retruns a separate dataframe for each 
-def load_data() -> tuple [pd.DataFrame, pd.DataFrame]:
-    base_path = str(IEE_DIR)
+def load_data(
+    data_dir: Path | None = None,
+    train_transaction_path: str | None = None,
+    train_identity_path: str | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    base_dir = _resolve_data_dir(data_dir)
+    train_trans_path = (
+        Path(train_transaction_path)
+        if train_transaction_path
+        else base_dir / "train_transaction.csv"
+    )
+    train_id_path = (
+        Path(train_identity_path)
+        if train_identity_path
+        else base_dir / "train_identity.csv"
+    )
 
-    train_trans = pd.read_csv(base_path + "/train_transaction.csv")
-    train_id = pd.read_csv(base_path + "/train_identity.csv")
+    if not train_trans_path.exists():
+        raise FileNotFoundError(
+            f"Missing train_transaction.csv at '{train_trans_path}'. "
+            "Place the Kaggle files under 'data/' at project root or set NIC_DATA_DIR."
+        )
+    if not train_id_path.exists():
+        raise FileNotFoundError(
+            f"Missing train_identity.csv at '{train_id_path}'. "
+            "Place the Kaggle files under 'data/' at project root or set NIC_DATA_DIR."
+        )
+
+    train_trans = pd.read_csv(str(train_trans_path))
+    train_id = pd.read_csv(str(train_id_path))
 
     return train_trans, train_id
 
@@ -120,4 +133,3 @@ def split(df : pd.DataFrame, split_idx: int) -> tuple [pd.DataFrame, pd.DataFram
     test = df.iloc[split_idx:]
 
     return train, test
-
