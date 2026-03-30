@@ -1,5 +1,6 @@
 from preprocessing.prepare_data import process_data
-
+import os
+from pathlib import Path
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import (
     precision_score,
@@ -9,8 +10,21 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import StandardScaler
 
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+def _resolve_path(p: str | None) -> str | None:
+    if not p:
+        return None
+    return p if os.path.isabs(p) else os.path.join(PROJECT_ROOT, p)
+
 # Load data
-X_train, X_test, y_train, y_test = process_data()
+data = process_data(
+    train_transaction_path = _resolve_path("data/train_transaction.csv"),
+    train_identity_path = _resolve_path("data/train_identity.csv")
+)
+
+X_train, X_test, y_train, y_test = data
 
 # Work on copies
 X_train = X_train.copy()

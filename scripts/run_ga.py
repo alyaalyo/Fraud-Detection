@@ -33,22 +33,6 @@ def load_config(path: str) -> Dict:
         return yaml.safe_load(f)
 
 
-def _encode_features(
-    X_train: pd.DataFrame, X_val: pd.DataFrame
-) -> Tuple[np.ndarray, np.ndarray]:
-    combined = pd.concat([X_train, X_val], axis=0)
-    for col in combined.columns:
-        if is_numeric_dtype(combined[col]):
-            combined[col] = combined[col].fillna(0)
-        else:
-            combined[col] = combined[col].fillna("unknown")
-            combined[col], _ = pd.factorize(combined[col])
-    combined = combined.astype(np.float32)
-    X_train_enc = combined.iloc[: len(X_train)].values
-    X_val_enc = combined.iloc[len(X_train) :].values
-    return X_train_enc, X_val_enc
-
-
 def _evaluate_individual(
     gene,
     input_dim: int,
@@ -149,7 +133,8 @@ def main() -> None:
     )
     X_train_df, X_val_df, y_train_s, y_val_s = data
 
-    X_train, X_val = _encode_features(X_train_df, X_val_df)
+    X_train = X_train_df.astype(np.float32).to_numpy()
+    X_val = X_val_df.astype(np.float32).to_numpy()
     y_train = y_train_s.values.astype(np.float32)
     y_val = y_val_s.values.astype(np.float32)
     input_dim = X_train.shape[1]

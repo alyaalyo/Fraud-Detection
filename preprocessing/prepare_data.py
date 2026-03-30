@@ -52,6 +52,7 @@ def process_data(
     y_train = train["isFraud"]
     X_test = test.drop("isFraud", axis=1)
     y_test = test["isFraud"]
+    X_train, X_test = frequency_encode(X_train, X_test)
     return X_train, X_test, y_train, y_test
 
 
@@ -133,3 +134,19 @@ def split(df : pd.DataFrame, split_idx: int) -> tuple [pd.DataFrame, pd.DataFram
     test = df.iloc[split_idx:]
 
     return train, test
+
+import pandas as pd
+
+def frequency_encode(X_train: pd.DataFrame, X_test: pd.DataFrame):
+    X_train = X_train.copy()
+    X_test = X_test.copy()
+
+    cat_cols = X_train.select_dtypes(include=["object", "category"]).columns
+
+    for col in cat_cols:
+        freq_map = X_train[col].value_counts(dropna=False) / len(X_train)
+
+        X_train[col] = X_train[col].map(freq_map)
+        X_test[col] = X_test[col].map(freq_map).fillna(0)
+
+    return X_train, X_test
